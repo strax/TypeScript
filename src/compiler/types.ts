@@ -178,6 +178,7 @@ namespace ts {
         TildeToken,
         AmpersandAmpersandToken,
         BarBarToken,
+        PipelineOperatorToken,
         QuestionToken,
         ColonToken,
         AtToken,
@@ -1537,6 +1538,7 @@ namespace ts {
     // see: https://tc39.github.io/ecma262/#prod-Expression
     export type BinaryOperator
         = AssignmentOperatorOrHigher
+        | SyntaxKind.PipelineOperatorToken
         | SyntaxKind.CommaToken
         ;
 

@@ -181,6 +181,7 @@ namespace ts {
         "~": SyntaxKind.TildeToken,
         "&&": SyntaxKind.AmpersandAmpersandToken,
         "||": SyntaxKind.BarBarToken,
+        "|>": SyntaxKind.PipelineOperatorToken,
         "?": SyntaxKind.QuestionToken,
         ":": SyntaxKind.ColonToken,
         "=": SyntaxKind.EqualsToken,
@@ -1804,6 +1805,10 @@ namespace ts {
                             else {
                                 return token = SyntaxKind.ConflictMarkerTrivia;
                             }
+                        }
+
+                        if (text.charCodeAt(pos + 1) === CharacterCodes.greaterThan) {
+                            return pos += 2, token = SyntaxKind.PipelineOperatorToken;
                         }
 
                         if (text.charCodeAt(pos + 1) === CharacterCodes.bar) {

@@ -3036,6 +3036,10 @@ namespace ts {
         return createBinary(left, SyntaxKind.BarBarToken, right);
     }
 
+    export function createPipeline(left: Expression, right: Expression) {
+        return createBinary(left, SyntaxKind.PipelineOperatorToken, right);
+    }
+
     export function createLogicalNot(operand: Expression) {
         return createPrefix(SyntaxKind.ExclamationToken, operand);
     }

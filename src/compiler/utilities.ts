@@ -2988,21 +2988,23 @@ namespace ts {
 
     export function getBinaryOperatorPrecedence(kind: SyntaxKind): number {
         switch (kind) {
-            case SyntaxKind.BarBarToken:
+            case SyntaxKind.PipelineOperatorToken:
                 return 5;
-            case SyntaxKind.AmpersandAmpersandToken:
+            case SyntaxKind.BarBarToken:
                 return 6;
-            case SyntaxKind.BarToken:
+            case SyntaxKind.AmpersandAmpersandToken:
                 return 7;
-            case SyntaxKind.CaretToken:
+            case SyntaxKind.BarToken:
                 return 8;
-            case SyntaxKind.AmpersandToken:
+            case SyntaxKind.CaretToken:
                 return 9;
+            case SyntaxKind.AmpersandToken:
+                return 10;
             case SyntaxKind.EqualsEqualsToken:
             case SyntaxKind.ExclamationEqualsToken:
             case SyntaxKind.EqualsEqualsEqualsToken:
             case SyntaxKind.ExclamationEqualsEqualsToken:
-                return 10;
+                return 11;
             case SyntaxKind.LessThanToken:
             case SyntaxKind.GreaterThanToken:
             case SyntaxKind.LessThanEqualsToken:
@@ -3010,20 +3012,20 @@ namespace ts {
             case SyntaxKind.InstanceOfKeyword:
             case SyntaxKind.InKeyword:
             case SyntaxKind.AsKeyword:
-                return 11;
+                return 12;
             case SyntaxKind.LessThanLessThanToken:
             case SyntaxKind.GreaterThanGreaterThanToken:
             case SyntaxKind.GreaterThanGreaterThanGreaterThanToken:
-                return 12;
+                return 13;
             case SyntaxKind.PlusToken:
             case SyntaxKind.MinusToken:
-                return 13;
+                return 14;
             case SyntaxKind.AsteriskToken:
             case SyntaxKind.SlashToken:
             case SyntaxKind.PercentToken:
-                return 14;
-            case SyntaxKind.AsteriskAsteriskToken:
                 return 15;
+            case SyntaxKind.AsteriskAsteriskToken:
+                return 16;
         }
 
         // -1 is lower than all other precedences.  Returning it will cause binary expression
