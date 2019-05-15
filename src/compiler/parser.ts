@@ -222,6 +222,8 @@ namespace ts {
                 return visitNode(cbNode, (<CallExpression>node).expression) ||
                     visitNodes(cbNode, cbNodes, (<CallExpression>node).typeArguments) ||
                     visitNodes(cbNode, cbNodes, (<CallExpression>node).arguments);
+            case SyntaxKind.PipelineExpression:
+                return visitNode(cbNode, (<PipelineExpression>node).left) || visitNode(cbNode, (<PipelineExpression>node).right);
             case SyntaxKind.TaggedTemplateExpression:
                 return visitNode(cbNode, (<TaggedTemplateExpression>node).tag) ||
                     visitNodes(cbNode, cbNodes, (<TaggedTemplateExpression>node).typeArguments) ||
@@ -3839,6 +3841,16 @@ namespace ts {
 
                 if (!consumeCurrentOperator) {
                     break;
+                }
+
+                if (token() === SyntaxKind.PipelineOperatorToken) {
+                    const argument = leftOperand;
+                    parseTokenNode();
+                    const expression = parseExpression();
+                    const node = <PipelineExpression>createNode(SyntaxKind.PipelineExpression, argument.pos);
+                    node.left = argument;
+                    node.right = expression;
+                    return finishNode(node);
                 }
 
                 if (token() === SyntaxKind.InKeyword && inDisallowInContext()) {

@@ -20629,7 +20629,9 @@ namespace ts {
             let effectiveParameterCount = getParameterCount(signature);
             let effectiveMinimumArguments = getMinArgumentCount(signature);
 
-            if (node.kind === SyntaxKind.TaggedTemplateExpression) {
+            if (node.kind === SyntaxKind.PipelineExpression) {
+                argCount = 1;
+            } else if (node.kind === SyntaxKind.TaggedTemplateExpression) {
                 argCount = args.length;
                 if (node.template.kind === SyntaxKind.TemplateExpression) {
                     // If a tagged template expression lacks a tail literal, the call is incomplete.
@@ -20984,7 +20986,10 @@ namespace ts {
          * Returns the effective arguments for an expression that works like a function invocation.
          */
         function getEffectiveCallArguments(node: CallLikeExpression): ReadonlyArray<Expression> {
-            if (node.kind === SyntaxKind.TaggedTemplateExpression) {
+            if (node.kind === SyntaxKind.PipelineExpression) {
+                // The LHS of a PipelineExpression is the argument to the RHS.
+                return [node.left];
+            } else if (node.kind === SyntaxKind.TaggedTemplateExpression) {
                 const template = node.template;
                 const args: Expression[] = [createSyntheticExpression(template, getGlobalTemplateStringsArrayType())];
                 if (template.kind === SyntaxKind.TemplateExpression) {
@@ -21187,6 +21192,7 @@ namespace ts {
         function resolveCall(node: CallLikeExpression, signatures: ReadonlyArray<Signature>, candidatesOutArray: Signature[] | undefined, checkMode: CheckMode, fallbackError?: DiagnosticMessage): Signature {
             const isTaggedTemplate = node.kind === SyntaxKind.TaggedTemplateExpression;
             const isDecorator = node.kind === SyntaxKind.Decorator;
+            const isPipeline = node.kind === SyntaxKind.PipelineExpression;
             const isJsxOpeningOrSelfClosingElement = isJsxOpeningLikeElement(node);
             const reportErrors = !candidatesOutArray;
 
@@ -21196,7 +21202,7 @@ namespace ts {
                 typeArguments = (<CallExpression>node).typeArguments;
 
                 // We already perform checking on the type arguments on the class declaration itself.
-                if (isTaggedTemplate || isJsxOpeningOrSelfClosingElement || (<CallExpression>node).expression.kind !== SyntaxKind.SuperKeyword) {
+                if (isPipeline || isTaggedTemplate || isJsxOpeningOrSelfClosingElement || (<CallExpression>node).expression.kind !== SyntaxKind.SuperKeyword) {
                     forEach(typeArguments, checkSourceElement);
                 }
             }
@@ -21806,6 +21812,30 @@ namespace ts {
             }
         }
 
+        function resolvePipelineExpression(node: PipelineExpression, candidatesOutArray: Signature[] | undefined, checkMode: CheckMode): Signature {
+            const rightType = checkExpression(node.right);
+            const apparentType = getApparentType(rightType);
+
+            if (apparentType === errorType) {
+                // Another error has already been reported
+                return resolveErrorCall(node);
+            }
+
+            const callSignatures = getSignaturesOfType(apparentType, SignatureKind.Call);
+            const numConstructSignatures = getSignaturesOfType(apparentType, SignatureKind.Construct).length;
+
+            if (isUntypedFunctionCall(rightType, apparentType, callSignatures.length, numConstructSignatures)) {
+                return resolveUntypedCall(node);
+            }
+
+            if (!callSignatures.length) {
+                invocationError(node, apparentType, SignatureKind.Call);
+                return resolveErrorCall(node);
+            }
+
+            return resolveCall(node, callSignatures, candidatesOutArray, checkMode);
+        }
+
         function resolveTaggedTemplateExpression(node: TaggedTemplateExpression, candidatesOutArray: Signature[] | undefined, checkMode: CheckMode): Signature {
             const tagType = checkExpression(node.tag);
             const apparentType = getApparentType(tagType);
@@ -21957,6 +21987,8 @@ namespace ts {
 
         function resolveSignature(node: CallLikeExpression, candidatesOutArray: Signature[] | undefined, checkMode: CheckMode): Signature {
             switch (node.kind) {
+                case SyntaxKind.PipelineExpression:
+                    return resolvePipelineExpression(node, candidatesOutArray, checkMode);
                 case SyntaxKind.CallExpression:
                     return resolveCallExpression(node, candidatesOutArray, checkMode);
                 case SyntaxKind.NewExpression:
@@ -22240,6 +22272,10 @@ namespace ts {
                 return !!decl && !!(decl.flags & NodeFlags.Ambient);
             }
             return false;
+        }
+
+        function checkPipelineExpression(node: PipelineExpression): Type {
+            return getReturnTypeOfSignature(getResolvedSignature(node));
         }
 
         function checkTaggedTemplateExpression(node: TaggedTemplateExpression): Type {
@@ -24341,6 +24377,8 @@ namespace ts {
                     /* falls through */
                 case SyntaxKind.NewExpression:
                     return checkCallExpression(<CallExpression>node, checkMode);
+                case SyntaxKind.PipelineExpression:
+                    return checkPipelineExpression(<PipelineExpression>node);
                 case SyntaxKind.TaggedTemplateExpression:
                     return checkTaggedTemplateExpression(<TaggedTemplateExpression>node);
                 case SyntaxKind.ParenthesizedExpression:

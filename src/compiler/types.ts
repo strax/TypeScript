@@ -355,6 +355,7 @@ namespace ts {
         NonNullExpression,
         MetaProperty,
         SyntheticExpression,
+        PipelineExpression,
 
         // Misc
         TemplateSpan,
@@ -1833,7 +1834,13 @@ namespace ts {
         template: TemplateLiteral;
     }
 
-    export type CallLikeExpression = CallExpression | NewExpression | TaggedTemplateExpression | Decorator | JsxOpeningLikeElement;
+    export interface PipelineExpression extends Expression {
+        kind: SyntaxKind.PipelineExpression;
+        left: Expression;
+        right: Expression;
+    }
+
+    export type CallLikeExpression = PipelineExpression | CallExpression | NewExpression | TaggedTemplateExpression | Decorator | JsxOpeningLikeElement;
 
     export interface AsExpression extends Expression {
         kind: SyntaxKind.AsExpression;
